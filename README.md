@@ -8,6 +8,8 @@
 什么是执行上下文？
 简而言之，执行上下文是评估和执行 JavaScript 代码的环境的抽象概念。每当 Javascript 代码在运行的时候，它都是在执行上下文中运行。 --- https://juejin.cn/post/6844903682283143181
 
+执行上下文的创建阶段，会分别生成变量对象，建立作用域链，确定this指向。https://www.jianshu.com/p/d647aa6d1ae6
+
 https://www.cnblogs.com/echolun/p/11438363.html
 1、执行上下文
 JS代码在执行前，JS引擎总要做一番准备工作，这份工作其实就是创建对应的执行上下文；
@@ -191,7 +193,79 @@ fn()
 ### 1.2 this/call/apply/bind
 #### 1.2.1、this
 ```
+执行上下文的创建阶段，会分别生成变量对象，建立作用域链，确定this指向。其中变量对象与作用域链我们都已经明白了。本文的关键，就是确定this指向。
+首先，我们需要得出一个非常重要的，并且一定要牢记于心的结论，this的指向，是在函数被调用的时候确定的。也就是执行上下文被创建时确定的。https://www.jianshu.com/p/d647aa6d1ae6
+可以这样理解，在JavaScript中，this的指向是调用时决定的，而不是创建时决定的，这就会导致this的指向会让人迷惑，简单来说，this具有运行期绑定的特性。https://github.com/axuebin/articles/issues/6
 
+```
+#### 1.2.2、call
+```
+        // 日拱一卒。
+        // 手写call的实现原理，一定挂载在Function.prototype上，这样所有的函数或者方法才能使用，原型链还需要再深入的了解一下。
+        Function.prototype.CopyCall = function(context){
+            // 如果调用CopyCall的不是一个函数，直接返回，因为下面要调用这个函数，如果不是函数，就没法调用。
+            if(typeof this !== 'function') return;
+            // 考虑到context是null的情况
+            context = context || window
+            // arguments不能直接使用slice，因为它只是一个类数组，不能使用slice
+            let params = [...arguments].slice(1)
+            // 把要调用的方法赋值到context.fn，使用完之后再删除。
+            context.fn = this
+            // 这一步的时候一定要用扩展运算符，因为params是一个数组。
+            let result = context.fn(...params);
+            // 删除context.fn这个属性值
+            delete context.fn;
+            // 返回执行后的结果。
+            return result
+        }
+        let maxNumber = Math.max.CopyCall(null,1,2,3,4);
+        console.log(maxNumber);
+        // 手写关键的点是方法加载Function.prototype上，这样所有的函数都可以使用了。
+        // context = context || window，考虑到context是null的情况下。
+        // 对于参数的处理，arguments是一个类数组，所以处理时要先转化为数组，然后拿到对应的参数。
+```
+#### 1.2.3、apply
+```
+         // 日拱一卒。
+        // 手写call的实现原理，一定挂载在Function.prototype上，这样所有的函数或者方法才能使用，原型链还需要再深入的了解一下。
+        Function.prototype.CopyApply = function(context){
+            // 如果调用CopyCall的不是一个函数，直接返回，因为下面要调用这个函数，如果不是函数，就没法调用。
+            if(typeof this !== 'function') return;
+            // 考虑到context是null的情况
+            context = context || window
+            // arguments不能直接使用slice，因为它只是一个类数组，不能使用slice
+            let params = [...arguments].slice(1)
+            // 把要调用的方法赋值到context.fn，使用完之后再删除。
+            context.fn = this
+            // 这一步的时候一定要用扩展运算符，因为params是一个数组。
+            let result = context.fn(params);
+            // 删除context.fn这个属性值
+            delete context.fn;
+            // 返回执行后的结果。
+            return result
+        }
+        let maxNumber = Math.max.CopyApply(null,[1,2,3,4]);
+        console.log(maxNumber);
+        // 手写关键的点是方法加载Function.prototype上，这样所有的函数都可以使用了。
+        // context = context || window，考虑到context是null的情况下。
+        // 对于参数的处理，arguments是一个类数组，所以处理时要先转化为数组，然后拿到对应的参数。
+```
+#### 1.2.4、bind
+```
+          Function.prototype.myBind = function () {
+            if (typeof this !== 'function') throw 'caller must be a function'
+            let self = this // 这里是关键 用来和new出来的比较原型来判断是否为new出来的  当前函数对象
+            let context = arguments[0] || {}
+            let args = Array.prototype.slice.call(arguments, 1) // 旧：参数
+            let fn = function () {
+                let fnArgs = Array.prototype.slice.call(arguments) // 新：参数
+                // bind 函数的参数 + 延迟函数的参数
+                // 用于检测构造函数的 prototype 属性是否出现在某个实例对象的原型链上
+                self.apply(this instanceof self ? this : context, args.concat(fnArgs))
+            }
+            fn.prototype = Object.create(self.prototype) // 维护原型
+            return fn
+        }
 ```
 ## 2、CSS基础（重点）
 
