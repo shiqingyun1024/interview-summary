@@ -267,6 +267,273 @@ fn()
             return fn
         }
 ```
+### 1.3 原型/继承
+#### 1.3.1 原型
+```
+https://blog.csdn.net/xiaolinlife/article/details/119291940
+
+
+```
+#### 1.3.2 继承
+```
+《JavaScript高级程序设计》提到了6中继承方式：
+1.原型链继承
+2.借用构造函数（经典继承）
+3.组合继承
+4.原型式继承
+5.寄生式继承
+6.寄生组合式继承
+```
+#### 1.3.2.1 原型链继承
+```
+        // 原型链继承
+        function Person(){
+            this.name = 'xiaopao';
+        }
+
+        Person.prototype.getName = function(){
+            console.log(this.name);
+        }
+
+        function Child(){
+            
+        }
+
+        Child.prototype = new Person();  // 这一步是最关键的。
+        var child1 = new Child();
+        child1.getName(); // xiaopao
+
+    缺点：
+
+    1、引用类型的属性（也就是Person的值）被所有实例共享
+    2、在创建Child 的实例时， 不能向Person传参
+
+        function Person(){
+            this.name = 'xiaopao';
+            this.colors = ['red', 'blue', 'green'];
+        }
+
+        Person.prototype.getName = function(){
+            console.log(this.name);
+        }
+
+        function Child(){
+
+        }
+
+        Child.prototype = new Person(); // 这一步是最关键的，Child的原型指向Person的实例。Child的实例，就可以使用Person实例上的方法和属性和实例原型上的方法和属性。
+        var child1 = new Child();
+        var child2 = new Child();
+        child1.colors.push('yellow');
+        console.log(child1.colors);
+        console.log(child2.colors);
+```  
+#### 1.3.2.2、借用构造函数（经典继承）
+```
+复制父类构造函数内的属性
+
+        // 借用构造函数继承（经典继承）
+        function Person(){
+            this.name = 'xiaopao';
+            this.colors = ['red', 'blue', 'green'];
+        }
+
+        Person.prototype.getName = function(){
+            console.log(this.name);
+        }
+
+        function Child(){
+            Person.call(this);// 这一步是最关键的，直接改变了Person的this指向。this的值是变动的，new出来的实例中的name和colors都是唯一的值。
+        }
+
+        var child1 = new Child();
+        var child2 = new Child();
+        child1.colors.push('yellow');
+        console.log(child1.name);
+        console.log(child1.colors); // ["red", "blue", "green", "yellow"]
+        console.log(child2.colors); // ["red", "blue", "green"]
+
+优点：
+1.避免了引用类型的属性被所有实例共享
+2.可以在Child中向Parent传参
+
+缺点：
+1.只是子类的实例，不是父类的实例
+2.方法都在构造函数中定义，每次创建实例都会创建一遍方法
+
+       // 借用构造函数继承， 向Parent传参
+       function Person(name){
+            this.name = name;
+        }
+
+        Person.prototype.getName = function(){
+            console.log(this.name);
+        }
+
+        function Child(name){
+            Person.call(this,name); // 这一步是最关键的。
+        }
+
+        var child1 = new Child('xiaopao');
+        var child2 = new Child('lulu');
+        console.log(child1.name); // xiaopao
+        console.log(child2.name); // lulu
+        console.log(child1 instanceof Person); // false   不能识别是Person的实例
+
+ **注意：function Child(name){
+            Person.call(this,name); // 这一步是最关键的。
+        }**       
+```
+#### 1.3.2.3、组合继承
+组合 原型链继承 和 借用构造函数继承
+背后的思路是：使用原型链实现对原型方法的继承，而通过借用构造函数来实现对实例属性的继承。
+```
+        function Parent(name){
+            this.name = name;
+            this.colors = ['red', 'blue', 'green'];
+        }
+
+        Parent.prototype.getName = function(){
+            console.log(this.name);
+        }
+
+        function Child(name,age){
+            Parent.call(this,name);// 第二次调用 Parent()  这一步是 借用构造函数
+            this.age = age;
+        }
+
+        Child.prototype = new Parent(); // 第一次调用 Parent()  这一步是 原型链继承
+
+        var child1 = new Child('xiaopao',18);
+        var child2 = new Child('lulu',19);
+        child1.getName(); // xiaopao
+        child2.getName(); // lulu
+        console.log(child1.age); // 18
+        console.log(child2.age); // 19
+        child1.colors.push('yellow');
+        console.log(child1.colors);  // ["red", "blue", "green", "yellow"]
+        console.log(child2.colors); // ["red", "blue", "green"]
+        console.log(child1 instanceof Child); // true
+        console.log(child1 instanceof Parent); // true
+
+优点：融合原型链继承和构造函数的优点，是JavaScript中最常用的继承模式
+缺点：调用了两次父类构造函数
+（组合继承最大的问题是无论什么情况下，都会调用两次超类型构造函数：一次是在创建子类型原型的时候，另一次是在子类型构造函数内部）
+```
+#### 4、原型式继承
+```
+        es6中的原型式继承新的写法就是Object.create()
+        // 原型式继承  
+        function CreateObj(o){
+            function F(){}  // 主要的步骤
+            F.prototype = o;  // 主要的步骤
+            console.log(o.__proto__ === Object.prototype);
+            console.log(F.prototype.constructor === Object); // true
+            return new F();  // 主要的步骤
+        }
+
+        var person = {
+            name: 'xiaopao',
+            friend: ['daisy','kelly']
+        }
+
+        var person1 = CreateObj(person);  // 主要的步骤
+        // var person2 = CreateObj(person);
+
+        person1.name = 'person1';
+        // console.log(person2.name); // xiaopao
+        person1.friend.push('taylor');
+        // console.log(person2.friend); // ["daisy", "kelly", "taylor"]
+        // console.log(person); // {name: "xiaopao", friend: Array(3)}
+        person1.friend = ['lulu'];
+        // console.log(person1.friend); // ["lulu"]
+        // console.log(person.friend); //  ["daisy", "kelly", "taylor"]
+        // 注意： 这里修改了person1.name的值，person2.name的值并未改变，并不是因为person1和person2有独立的name值，而是person1.name='person1'是给person1添加了name值，并非修改了原型上的name值
+        // 因为我们找对象上的属性时，总是先找实例上对象，没有找到的话再去原型对象上的属性。实例对象和原型对象上如果有同名属性，总是先取实例对象上的值
+
+缺点： 包含引用类型的属性值始终都会共享相应的值， 这点跟原型链继承一样
+注意： 这里修改了person1.name的值，person2.name的值并未改变，并不是因为person1和person2有独立的name值，而是person1.name='person1'是给person1添加了name值，并非修改了原型上的name值。
+因为我们找对象上的属性时，总是先找实例上对象，没有找到的话再去原型对象上的属性。实例对象和原型对象上如果有同名属性，总是先取实例对象上的值        
+```
+
+
+     
+#### 5、寄生式继承
+创建一个仅用于封装继承过程的函数，该函数在内部以某种形式来做增强对象，最后返回对象。
+可以理解为在原型式继承的基础上新增一些函数或属性
+```
+        // 寄生式继承  可以理解为在原型式继承的基础上增加一些函数或属性
+        var ob = {
+            name: 'xiaopao',
+            friends: ['lulu','huahua']
+        }
+
+        function CreateObj(o){
+            function F(){};  // 创建一个构造函数F
+            F.prototype = o;
+            return new F();
+        }
+
+        // 上面CreateObj函数 在ECMAScript5 有了一新的规范写法，Object.create(ob) 效果是一样的 , 看下面代码
+        var ob1 = CreateObj(ob);
+        var ob2 = Object.create(ob);
+        console.log(ob1.name); // xiaopao
+        console.log(ob2.name); // xiaopao
+
+        function CreateOb(o){
+            var newob = CreateObj(o); // 创建对象 或者用 var newob = Object.create(ob)
+            newob.sayName = function(){ // 增强对象
+                console.log(this.name);
+            }
+            return newob; // 指定对象
+        }
+
+        var p1 = CreateOb(ob);
+        p1.sayName(); // xiaopao 
+```
+
+
+#### 6、寄生组合式继承
+```
+子类构造函数复制父类的自身属性和方法，子类原型只接收父类的原型属性和方法
+
+所谓寄生组合继承，即通过借用构造函数来继承属性，通过原型链的混成形式来继承方法。
+其背后的基本思路是：不必为了指定子类型的原型而调用超类型的构造函数，我们所需要的无非就是超类型的原型的一个副本而已。本质上，就是使用寄生式继承来继承超类型的原型，然后再将结果指定给予类型的原型。
+
+        // 寄生组合式继承
+        function Parent(name){
+            this.name = name;
+            this.colors = ['red', 'blue', 'green'];
+        }
+
+        Parent.prototype.sayName = function(){
+            console.log(this.name);
+        }
+
+        function Child(name,age){
+            Parent.call(this,name); 
+            this.age = age;
+        }
+
+        function CreateObj(o){
+            function F(){};
+            F.prototype = o;
+            return new F();
+        }
+
+        // Child.prototype = new Parent(); // 这里换成下面
+        <!-- 最关键的函数实现 -->
+        function prototype(child,parent){
+            var prototype = CreateObj(parent.prototype);   // var prototype = Object.create(parent.prototype)
+            prototype.constructor = child;
+            child.prototype = prototype;
+        }
+        prototype(Child,Parent);
+
+        var child1 = new Child('xiaopao', 18);
+        console.log(child1); 
+```
+
 ## 2、CSS基础（重点）
 
 ## 3、框架(Vue为主 重点)
