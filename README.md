@@ -274,7 +274,7 @@ https://blog.csdn.net/xiaolinlife/article/details/119291940
 
 
 ```
-#### 1.3.2 继承
+### 1.3.2 继承
 ```
 《JavaScript高级程序设计》提到了6中继承方式：
 1.原型链继承
@@ -420,7 +420,7 @@ https://blog.csdn.net/xiaolinlife/article/details/119291940
 缺点：调用了两次父类构造函数
 （组合继承最大的问题是无论什么情况下，都会调用两次超类型构造函数：一次是在创建子类型原型的时候，另一次是在子类型构造函数内部）
 ```
-#### 4、原型式继承
+#### 1.3.2.4、原型式继承
 ```
         es6中的原型式继承新的写法就是Object.create()
         // 原型式继承  
@@ -455,10 +455,8 @@ https://blog.csdn.net/xiaolinlife/article/details/119291940
 注意： 这里修改了person1.name的值，person2.name的值并未改变，并不是因为person1和person2有独立的name值，而是person1.name='person1'是给person1添加了name值，并非修改了原型上的name值。
 因为我们找对象上的属性时，总是先找实例上对象，没有找到的话再去原型对象上的属性。实例对象和原型对象上如果有同名属性，总是先取实例对象上的值        
 ```
-
-
      
-#### 5、寄生式继承
+#### 1.3.2.5、寄生式继承
 创建一个仅用于封装继承过程的函数，该函数在内部以某种形式来做增强对象，最后返回对象。
 可以理解为在原型式继承的基础上新增一些函数或属性
 ```
@@ -493,7 +491,7 @@ https://blog.csdn.net/xiaolinlife/article/details/119291940
 ```
 
 
-#### 6、寄生组合式继承
+#### 1.3.2.6、寄生组合式继承
 ```
 子类构造函数复制父类的自身属性和方法，子类原型只接收父类的原型属性和方法
 
@@ -535,6 +533,114 @@ https://blog.csdn.net/xiaolinlife/article/details/119291940
 ```
 
 ## 2、CSS基础（重点）
+### 2.1 position
+```
+position的属性有哪些？
+分别的作用是？
+https://blog.csdn.net/xiaolinlife/article/details/104872893
+```
+### 2.2 行内元素/块级元素
+```
+块级元素和行内元素的分类：
+　　在HTML的角度来讲，标签分为：
+
+　　　　文本级标签：p , span , a , b , i , u , em
+
+　　　　容器级标签：div , h系列 , li , dt ,dd
+
+　　　　p：里面只能放文字和图片和表单元素，p里面不能放h和ul，也不能放p。
+
+　　从CSS的角度讲，CSS的分类和上面的很像，就p不一样：
+
+　　　　行内元素：除了p之外，所有的文本级标签，都是行内元素。p是个文本级标签，但是是个块级元素。
+
+　　　　块级元素：所有的容器级标签，都是块级元素，以及p标签。
+```
+### flex
+```
+已总结
+思维导图和博客
+http://www.ruanyifeng.com/blog/2015/07/flex-grammar.html
+
+flex:1的解释
+https://www.cnblogs.com/LangZ-/p/12703858.html
+flex属性 是 flex-grow、flex-shrink、flex-basis三个属性的缩写。
+
+推荐使用此简写属性，而不是单独写这三个属性。
+
+flex-grow：定义项目的的放大比例；
+
+        默认为0，即 即使存在剩余空间，也不会放大；
+       所有项目的flex-grow为1：等分剩余空间（自动放大占位）；
+        flex-grow为n的项目，占据的空间（放大的比例）是flex-grow为1的n倍。
+        
+
+flex-shrink：定义项目的缩小比例；
+
+         默认为1，即 如果空间不足，该项目将缩小；
+         所有项目的flex-shrink为1：当空间不足时，缩小的比例相同；
+         flex-shrink为0：空间不足时，该项目不会缩小；
+         flex-shrink为n的项目，空间不足时缩小的比例是flex-shrink为1的n倍。
+ 
+
+flex-basis： 定义在分配多余空间之前，项目占据的主轴空间（main size），浏览器根据此属性计算主轴是否有多余空间，
+
+         默认值为auto，即 项目原本大小；
+         设置后项目将占据固定空间。
+         
+
+   所以flex属性的默认值为：0 1 auto （不放大会缩小）
+
+   flex为none：0 0 auto  （不放大也不缩小）
+
+   flex为auto：1 1 auto  （放大且缩小）
+
+   
+
+   flex为一个非负数字n：该数字为flex-grow的值，
+
+   flex：n；=  flex-grow：n；
+
+                     flex-shrink：1；
+
+                     flex-basis：0%；
+
+           
+
+   flex为两个非负数字n1，n2： 分别为flex-grow和flex-shrink的值，
+
+   flex：n1 n2; = flex-grow：n1；
+
+                           flex-shrink：n2；
+
+                           flex-basis：0%；
+
+             
+
+   flex为一个长度或百分比L：视为flex-basis的值，
+
+   flex: L; =  flex-grow：1；
+
+                   flex-shrink：1；
+
+                   flex-basis：L；
+
+           
+
+   flex为一个非负数字n和一个长度或百分比L：分别为flex-grow和flex-basis的值，
+
+   flex：n L；= flex-grow：n；
+
+                        flex-shrink：1；
+
+                        flex-basis：L;
+
+            
+
+   可以发现，flex-grow和flex-shrink在flex属性中不规定值则为1，flex-basis为0%。
+
+   到这里我已经解决我的问题啦，flex：1即为flex-grow：1，经常用作自适应布局，将父容器的display：flex，侧边栏大小固定后，将内容区flex：1，内容区则会自动放大占满剩余空间。
+```
 
 ## 3、框架(Vue为主 重点)
 ### MVVM 
