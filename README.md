@@ -1025,7 +1025,41 @@ css3规范中要求使用双冒号（::）表示伪元素，以此来区分伪�
 伪元素：用于将特殊的效果添加到某些选择器
 其实根本意思就是就是对那些不能通过class、id等选择元素的补充
 ```
+### rem
+```
+1、媒体查询
+html {
+    font-size : 20px;
+}
+@media only screen and (min-width: 401px){
+    html {
+        font-size: 25px !important;
+    }
+}
+@media only screen and (min-width: 428px){
+    html {
+        font-size: 26.75px !important;
+    }
+}
+@media only screen and (min-width: 481px){
+    html {
+        font-size: 30px !important; 
+    }
+}
+@media only screen and (min-width: 569px){
+    html {
+        font-size: 35px !important; 
+    }
+}
+@media only screen and (min-width: 641px){
+    html {
+        font-size: 40px !important; 
+    }
+}
 
+2、或者使用js动态的计算屏幕的宽度，然后动态地给html的根元素赋值px的大小
+https://blog.csdn.net/xiaolinlife/article/details/109288470
+```
 ## 3、框架(Vue为主 重点)
 ### MVVM 
 #### 介绍一下MVVM，和MVC有什么区别
