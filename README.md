@@ -1133,6 +1133,78 @@ MVVM模型
 
 ```
 ## 4、工程化（重点）
+### 4.1 介绍一下Loader
+```
+1、常用的 loader 和它们的作用  use数组中loader执行顺序：从右到左，从下到上，依次执行。
+style-loader 创建style标签，将js中的样式资源插入进去，添加到header中生成
+css-loader 将css文件变成commonjs模块加载到js中，里面内容是样式字符串
+less-loader 将less文件转化为css文件
+sass-loader 将sass文件转化为css文件
+html-loader 处理html文件中的img图片，负责引入img，从而能被url-loader进行处理。
+url-loader 下载url-loader file-loader   url-loader要依赖于file-loader，所以也要下载file-loader
+file-loader 分发文件到 output 目录并返回相对路径,打包其他资源主要是包括字体图标等，主要用file-loader来处理这些资源，原理一般都是直接拷贝到打包库里面，不进行任何转化处理
+url-loader 和 file-loader 类似，但是当文件小于设定的 limit 时可以返回一个 Data Url
+html-minify-loader 压缩 HTML
+babel-loader 用 babel 来转换 ES6 文件到 ES5
+
+主要用到了style-loader，css-loader，less-loader，从右往左，或者从下往上执行，
+less-loader是把less文件转化为css文件，
+css-loader是把css文件转化为js文件，
+style-loader是把css样式通过添加style标签的形式引入到html中。
+
+{
+              // 匹配哪些文件
+              test:/\.less$/,
+              // 使用哪些loader进行处理
+              use:[
+                // use数组中loader执行顺序：从右到左，从下到上，依次执行。
+                //   创建style标签，将js中的样式资源插入进去，添加到header中生成
+                  'style-loader',
+                //   将css文件变成commonjs模块加载到js中，里面内容是样式字符串
+                'css-loader',
+                // 将less文件转化为css文件
+                // 需要下载less-loader和less
+                'less-loader'
+              ]  
+}
+
+// 处理图片资源处理css、sass、less等文件中的img图片 不过这个loader处理不了在html中img图片，例如：<img src="./images/vue1.jpeg" />，先要用html-loader负责先引入图片，然后由url-loader处理。
+            //  url-loader是处理文件中引入的图片路径的，如：background-image: url('./images/vue1.jpeg');  
+            {
+                test: /\.(jpg|png|jpeg|gif)$/,
+                // 使用单个loader
+                // 下载url-loader file-loader   url-loader要依赖于file-loader，所以也要下载file-loader
+                loader: 'url-loader',
+                // 进行配置
+                options: {
+                    // 图片大小小于8kb，就会被base64处理（一般都处理8~12kb及以下的图片）
+                    // 优点：减少请求数量（减轻服务器压力）
+                    // 缺点：图片体积会更大（文件请求速度更慢）
+                    limit: 10 * 1024,
+                    // 问题：因为url-loader默认使用es6模块化解析，而html-loader引入图片是commonjs
+                    // 解析时会出现问题，[object Module]
+                    // 解决：关闭url-loader的es6模块化，使用commonjs解析
+                    esModule:false,
+                    // 给图片进行重命名
+                    // [hash:8]取图片的hash的前8位
+                    // [ext]取文件原来的扩展名
+                    name:'[hash:8].[ext]',
+                    // 输出到build下面的imgs文件夹中
+                    outputPath:'imgs'
+                },
+            },
+
+            {
+                test: /\.html$/,
+                // 处理html文件中的img图片，负责引入img，从而能被url-loader进行处理。
+                loader: 'html-loader'
+            }
+打包其他资源主要是包括字体图标等，主要用file-loader来处理这些资源，原理一般都是直接拷贝到打包库里面，不进行任何转化处理。
+同时使用clean-webpack-plugin来清除build文件夹，这样每次打包，里面都是最新的打包文件，把之前的删除掉了。
+通过cleanAfterEveryBuildPatterns来设置打包时清空的文件夹。
+cleanAfterEveryBuildPatterns:['build']
+
+```
 ## 5、性能优化（重点）
 ## 6、TypeScript（暂时先不看）
 ## 7、网络（深入了解）
