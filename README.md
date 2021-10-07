@@ -1061,6 +1061,46 @@ html {
 https://blog.csdn.net/xiaolinlife/article/details/109288470
 ```
 ## 3、框架(Vue为主 重点)
+### 生命周期各个阶段都做了什么？
+```
+https://blog.csdn.net/qq_47443027/article/details/114641639
+vue 的生命周期是： vue 实例从创建到销毁，也就是从开始创建、初始化数据、编译模板、挂载Dom→渲染、更新→渲染、卸载等一系列过程。
+
+每个 Vue 实例在被创建时都要经过一系列的初始化过程——例如，需要设置数据监听、编译模板、将实例挂载到 DOM 并在数据变化时更新 DOM 等。同时在这个过程中也会运行一些叫做生命周期钩子的函数
+
+beforeCreate	Function	在实例初始化之后，数据观测 (data observer) 和 event/watcher 事件配置之前被调用。
+created	Function	在实例创建完成后被立即调用。在这一步，实例已完成以下的配置：数据观测 (data observer)， 属性和方法的运算，watch/event 事件回调。然而，挂载阶段还没开始，$el 属性目前不可见。
+beforeMount	Function	在挂载开始之前被调用：相关的 render 函数首次被调用。
+mounted	Function	el 被新创建的 vm.$el 替换，并挂载到实例上去之后调用该钩子。如果 root 实例挂载了一个文档内元素，当 mounted 被调用时 vm.$el 也在文档内。
+beforeUpdate	Function	数据更新时调用，发生在虚拟 DOM 打补丁之前。这里适合在更新之前访问现有的 DOM，比如手动移除已添加的事件监听器。该钩子在服务器端渲染期间不被调用，因为只有初次渲染会在服务端进行。
+updated	Function	由于数据更改导致的虚拟 DOM 重新渲染和打补丁，在这之后会调用该钩子。
+activated	Function	keep-alive 组件激活时调用。该钩子在服务器端渲染期间不被调用。
+deactivated	Function	keep-alive 组件停用时调用。该钩子在服务器端渲染期间不被调用。
+beforeDestroy	Function	实例销毁之前调用。在这一步，实例仍然完全可用。该钩子在服务器端渲染期间不被调用。
+destroyed	Function	Vue 实例销毁后调用。调用后，Vue 实例指示的所有东西都会解绑定，所有的事件监听器会被移除，所有的子实例也会被销毁。该钩子在服务器端渲染期间不被调用。
+errorCaptured（2.5.0+ 新增）	(err: Error, vm: Component, info: string) => ?boolean	当捕获一个来自子孙组件的错误时被调用。此钩子会收到三个参数：错误对象、发生错误的组件实例以及一个包含错误来源信息的字符串。此钩子可以返回 false 以阻止该错误继续向上传播。
+
+
+要掌握每个生命周期什么时候被调用
+
+1.beforeCreate 在实例初始化之后，数据观测(data observer) 之前被调用。
+2.created 实例已经创建完成之后被调用。在这一步，实例已完成以下的配置：数据观测(data observer)，属性和方法的运算，watch/event 事件回调。这里没有$el
+3.beforeMount 在挂载开始之前被调用：相关的 render 函数首次被调用。
+4.mounted el 被新创建的 vm.$el 替换，并挂载到实例上去之后调用该钩子。
+5.beforeUpdate 数据更新时调用，发生在虚拟 DOM 重新渲染和打补丁之前。
+6.updated 由于数据更改导致的虚拟 DOM 重新渲染和打补丁，在这之后会调用该钩子。
+7.beforeDestroy 实例销毁之前调用。在这一步，实例仍然完全可用。
+8.destroyed Vue 实例销毁后调用。调用后， Vue实例指示的所有东西都会解绑定，所有的事件监听器会被移除，所有的子实例也会被销毁。 该钩子在服务器端渲染期间不被调用
+
+要掌握每个生命周期内部可以做什么事
+
+1.created 实例已经创建完成，因为它是最早触发的原因可以进行一些数据，资源的请求。
+2.mounted 实例已经挂载完成，可以进行一些DOM操作
+3.beforeUpdate 可以在这个钩子中进一步地更改状态，这不会触发附加的重渲染过程。
+4.updated 可以执行依赖于 DOM 的操作。然而在大多数情况下，你应该避免在此期间更改状态，因为这可能会导致更新无限循环。该钩子在服务器端渲染期间不被调用。
+5.destroyed 可以执行一些优化操作,清空定时器，解除绑定事件
+
+```
 ### MVVM 
 #### 介绍一下MVVM，和MVC有什么区别
 ```
@@ -1320,6 +1360,69 @@ module.exports = {
   ]
 }
 
+如何优化打包后的文件
+打包后的文件最优的结果就是文件尽可能少、文件尽可能小，所以只需要根据这两个方向去优化。
+
+1.模块分离
+模块分离就是将一个整体的代码，分布到不同的打包文件中去，目的就是为了减少公共代码，降低打包文件总体积，特别是对于一些大型的第三方库，使用.模块分离还能充分利用浏览器缓存去加载这些公共模块，不用每次都去请求，利于传输速度。当多个chunk引入了公共模块的时候，webpack默认是不分离模块的，这样就会造成代码重复，所以当多个chunk引入了公共模块或者公共模块体积比较大，或者公共模块较少变动的时候，可以使用分包。
+分包有两种方式：手动分离和自动分离
+
+手动分离
+手动分包就是开发人员通过根据分析模块的依赖关系，把公共模块通过打包或手动放到一个公共文件夹里，被打包后的index.html文件引入到页面。
+大致步骤：
+（1）提取公共模块到公共文件夹，并生成资源清单列表（可以手动创建，也可以使用webpack内置插件DllPlugin生成）
+（2）在html页面引入公共模块
+（3）使用DllReferencePlugin控制chunk打包结果,资源清单里面有的模块，不在打包进入bundle里面。
+
+自动分离
+自动分离相对于手动分离会方便一点，只需要配置要分离策略。
+webpack提供了optimization配置项，用于配置一些优化信息
+其中splitChunks是分离模块策略的配置
+module.exports = {
+  optimization: {
+    splitChunks: {
+      // 分包策略
+      chunks: 'all',
+    }
+  }
+}
+
+2.代码压缩
+webpack自动集成了Terser插件进行打包时代码压缩,只需要配置optimization选项即可
+/压缩js
+const TerserPlugin = require('terser-webpack-plugin');
+//压缩css
+const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin'); 
+module.exports = {
+  module: {
+    rules: [
+      {
+        test: /\.css$/,
+        loader: ExtractTextPlugin.extract('style-loader', 'css-loader')
+      }
+    ]
+  },
+  optimization: {
+    // 是否要启用压缩，默认情况下，生产环境会自动开启
+    minimize: true, 
+    minimizer: [ // 压缩时使用的插件，可以有多个
+      new TerserPlugin(), 
+      new OptimizeCSSAssetsPlugin()
+    ],
+  },
+};
+
+3.删除无用的代码和模块
+webpack2开始内置Tree-Shaking功能来删除用不到或者对程序没有影响的代码，极大的减少了打包后的体积。tree-shaking是基于es6的，因此对于一些使用commonJs导出的第三方库如lodash，应该换成es6方式导出的版本，这样才能使用tree-shaking优化。
+
+4.模块懒加载
+对于一些不会立即使用的模块，可以通过懒加载的形式导入import('xxx'),webpack打包的时候会把这些需要懒加载的模块打包成独立的文件，只有当使用到的时候才会去加载这个文件，并把模块添加到webpackJsonp对象中
+
+采用Oneof
+
+Scope Hoisting
+原理
+作用域提升，用来分析模块间的依赖关系，尽可能将打散的模块合并到一个函数中，又不能造成代码冗余，所以只有被引用一次的模块才能被合并。 由于需要分析模块间的依赖关系，所以源码IXUS采用了ES6模块化的，否则Webpack会降级不采用 Scope Hoisting。
 
 ```
 ## 5、性能优化（重点）
