@@ -640,6 +640,390 @@ flex-basis： 定义在分配多余空间之前，项目占据的主轴空间（
    可以发现，flex-grow和flex-shrink在flex属性中不规定值则为1，flex-basis为0%。
 
    到这里我已经解决我的问题啦，flex：1即为flex-grow：1，经常用作自适应布局，将父容器的display：flex，侧边栏大小固定后，将内容区flex：1，内容区则会自动放大占满剩余空间。
+
+   九宫格
+   .box {
+  display: flex;
+  flex-wrap: wrap;
+}
+```
+### 重绘和回流
+```
+https://blog.csdn.net/qq_38128179/article/details/101023305
+1、HTML被HTML解析器解析成DOM Tree, CSS则被CSS解析器解析成CSSOM Tree。
+2、DOM Tree和CSSOM Tree解析完成后，被附加到一起，形成渲染树（Render Tree）。
+3、节点信息计算(重排)，这个过程被叫做Layout(Webkit)或者Reflow(Mozilla)。即根据渲染树计算每个节点的几何信息生成布局。
+4、渲染绘制(重绘)，这个过程被叫做(Painting 或者 Repaint)。即根据计算好的信息绘制整个页面。
+5、Display显示到屏幕上。
+
+以上5步简述浏览器的一次渲染过程，每一次的dom更改或者css几何属性更改，都会引起一次浏览器的重排/重绘过程，而如果是css的非几何属性更改，则只会引起重绘过程。所以说重排一定会引起重绘，而重绘不一定会引起重排，重绘的开销较小，回流的代价较高。
+
+二、重排（Relayout/Reflow）
+所谓重排，实际上是根据渲染树中每个渲染对象的信息，计算出各自渲染对象的几何信息（DOM对象的位置和尺寸大小），并将其安置在界面中的正确位置。
+重排也叫回流，实际上，reflow的字面意思也是回流，之所以有的叫做重排，也许是因为重排更好理解，更符合中国人的思维。标准文档之所以叫做回流（Reflow）,是因为浏览器渲染是基于“流式布局”的模型，流实际就使我们常说的文档流，当dom或者css几何属性发生改变的时候，文档流会受到波动联动的去更改，流就好比一条河里的水，回流就好比向河里扔了一块石头，激起涟漪，然后引起周边水流受到波及，所以叫做回流，这样理解似乎更标准更规范，不过叫什么并不重要，重要的是我们真正理解了这个过程就行。
+重排的影响范围：
+由于浏览器渲染界面是基于流式布局模型（Flow Based Layout），也就是某一个DOM节点信息更改了，就会触发重排。只是这个DOM更改程度会决定周边DOM更改范围，即全局范围和局部范围
+
+全局范围：就是从根节点html开始对整个渲染树进行重新布局，例如当我们改变了窗口尺寸或方向或者是修改了根元素的尺寸或者字体大小等；
+
+局部范围：对渲染树的某部分或某一个渲染对象进行重新布局。
+
+会引起重排的操作：
+
+页面首次渲染。
+浏览器窗口大小发生改变——resize事件发生时。
+元素尺寸或位置发生改变——定位、边距、填充、边框、宽度和高度。
+元素内容变化（文字数量或图片大小等等）。
+元素字体大小变化。
+添加或者删除可见的DOM元素。
+激活CSS伪类（例如：:hover）。
+设置style属性
+查询某些属性或调用某些方法。
+
+常见引起重排属性和方法：
+
+width
+display
+clientWidth
+offsetWidth
+scrollWidth
+scrollIntoView()
+getBoundingClientRect()
+height
+border
+clientHeight
+offsetHeight
+scrollHeight
+scrollTo()
+scrollIntoViewIfNeeded()
+margin
+position
+clientTop
+offsetTop
+scrollTop
+getComputedStyle()
+padding
+overflow
+clientLeft
+offsetLeft
+scrollLeft
+
+三、重绘（Repainting）
+相比重排，重绘就简单多了，所谓重绘，就是当页面中元素样式的改变并不影响它在文档流中的位置时，例如更改了字体颜色,浏览器会将新样式赋予给元素并重新绘制的过程称。
+常见引起浏览器绘制过程的属性包含：
+color
+text-decoration
+outline-color
+outline-width
+border-style
+background-image
+outline
+box-shadow
+visibility
+background-position
+outline-style
+background-size
+background
+background-repeat
+border-radius
+
+四、优化策略
+其实浏览器很聪明，不可能每次修改样式就 reflow 或者 repaint 一次，一般来说，浏览器会积累一批操作，然后做一次 reflow。但是我们也应该减少重绘重排的次数。
+
+我们知道操作DOM是一个高成本的操作，不仅是因为本身js与DOM的链接访问，还包括操作DOM后引起一连串的重排，因此，从性能优化角度，我们可以从以下几个方面着手：
+
+【1】减少DOM操作
+
+最小化DOM访问次数，尽量缓存访问DOM的样式信息，避免过度触发回流。
+如果在一个局部方法中需要多次访问同一个dom，可以在第一次获取元素时用变量保存下来，减少遍历时间。
+用事件委托来减少事件处理器的数量。
+用querySelectorAll()替代getElementByXX()。
+
+2】减少重排
+
+避免设置大量的style内联属性，因为通过设置style属性改变结点样式的话，每一次设置都会触发一次reflow，所以最好是使用class属性
+不要使用table布局，因为table中某个元素一旦触发了reflow，那么整个table的元素都会触发reflow。那么在不得已使用table的场合，可以设置table-layout:auto;或者是table-layout:fixed这样可以让table一行一行的渲染，这种做法也是为了限制reflow的影响范围
+尽量少使用display：none可以使用visibility：hidden代替，display：none会造成重排，visibility：hidden只会造成重绘。
+使用resize事件时，做防抖和节流处理。
+
+【3】css及优化动画
+
+少用css表达式
+减少通过JavaScript代码修改元素样式，尽量使用修改class名方式操作样式或动画；
+可以把动画效果应用到position属性为absolute或fixed的元素上，这样对其他元素影响较小
+动画实现的速度的选择。比如实现一个动画，以1个像素为单位移动这样最平滑，但是reflow就会过于频繁，大量消耗CPU资源，如果以3个像素为单位移动则会好很多。
+开启动画的GPU加速，把渲染计算交给GPU。
+```
+### 垂直居中的方法
+```
+假设HTML代码如下，总共两个元素，父元素和子元素
+<div class="wp">
+    <div class="box size">123123</div>
+</div>
+/* 公共代码 */
+.wp {
+    border: 1px solid red;
+    width: 300px;
+    height: 300px;
+}
+
+.box {
+    background: green;    
+}
+
+.box.size{
+    width: 100px;
+    height: 100px;
+}
+/* 公共代码 */
+
+1、absolute + 负margin
+/* 定位代码 */
+.wp {
+    position: relative;
+}
+.box {
+    position: absolute;;
+    top: 50%;
+    left: 50%;
+    margin-left: -50px;
+    margin-top: -50px;
+}
+
+2、absolute + margin auto
+.wp {
+    position: relative;
+}
+.box {
+    position: absolute;;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: auto;
+}
+3、absolute + calc
+/* 此处引用上面的公共代码 */
+/* 此处引用上面的公共代码 */
+
+/* 定位代码 */
+.wp {
+    position: relative;
+}
+.box {
+    position: absolute;;
+    top: calc(50% - 50px);
+    left: calc(50% - 50px);
+}
+4、absolute + transform
+修复绝对定位的问题，还可以使用css3新增的transform，transform的translate属性也可以设置百分比，其是相对于自身的宽和高，所以可以讲translate设置为-50%，就可以做到居中了，代码如下：
+.wp {
+    position: relative;
+}
+.box {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+5、lineheight
+/* 此处引用上面的公共代码 */
+/* 此处引用上面的公共代码 */
+
+/* 定位代码 */
+.wp {
+    line-height: 300px;
+    text-align: center;
+    font-size: 0px;
+}
+.box {
+    font-size: 16px;
+    display: inline-block;
+    vertical-align: middle;
+    line-height: initial;
+    text-align: left; /* 修正文字 */
+}
+
+6、writing-mode
+很多同学一定和我一样不知道writing-mode属性，感谢@张鑫旭老师的反馈，简单来说writing-mode可以改变文字的显示方向，比如可以通过writing-mode让文字的显示变为垂直方向
+
+7、flex
+.wp {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+```
+### BFC
+```
+BFC 即 Block Formatting Contexts (块级格式化上下文)
+具有 BFC 特性的元素可以看作是隔离了的独立容器，容器里面的元素不会在布局上影响到外面的元素，并且 BFC 具有普通容器所没有的一些特性。
+
+只要元素满足下面任一条件即可触发 BFC 特性：
+
+body 根元素
+浮动元素：float 除 none 以外的值
+绝对定位元素：position (absolute、fixed)
+display 为 inline-block、table-cells、flex
+overflow 除了 visible 以外的值 (hidden、auto、scroll)
+```
+### CSS选择器
+```
+CSS的选择器其实大类的话可以分为三类，即id选择器、class选择器、标签选择器。它们之间可以有多种组合。
+
+css选择器介绍：
+
+1、类别选择器
+
+类选择器根据类名来选择，前面以“.”来标志。
+
+示例：
+
+.demoDiv{
+color:#FF0000;
+}
+2、标签选择器
+
+一个完整的HTML页面是有很多不同的标签组成，而标签选择器，则是决定哪些标签采用相应的CSS样式。
+
+在style.css文件中对p标签样式的声明如下：
+
+p{
+font-size:12px;
+background:#900;
+color:090;
+}
+3、ID选择器
+
+ID 选择器可以为标有特定 ID 的 HTML 元素指定特定的样式。 根据元素ID来选择元素，具有唯一性，这意味着同一id在同一文档页面中只能出现一次。
+
+前面以”#”号来标志，在样式里面可以这样定义：
+
+#demoDiv{
+color:#FF0000;
+}
+4、后代选择器
+
+后代选择器也称为包含选择器，用来选择特定元素或元素组的后代，将对父元素的选择放在前面，对子元素的选择放在后面，中间加一个空格分开。
+
+<style>
+.father.child{
+color:#0000CC;
+}
+</style>
+<p class="father">
+黑色
+<label class="child">蓝色
+<b>也是蓝色</b>
+</label>
+</p>
+5、子选择器
+
+请注意这个选择器与后代选择器的区别，子选择器（child selector）仅是指它的直接后代，或者你可以理解为作用于子元素的第一个后代。而后代选择器是作用于所有子后代元素。后代选择器通过空格来进行选择，而子选择器是通过“>”进行选择。
+
+我们看下面的代码：
+
+Example Source Code
+
+CSS：
+
+#links a {color:red;}
+#links > a {color:blue;}
+HTML：
+
+<p id="links">
+<a href="#">HTML中文网</a>>
+<span><a href="#">CSS布局实例</a></span>
+<span><a href="#">CSS教程</a></span>
+</p>
+6、伪类选择器
+
+有时候还会需要用文档以外的其他条件来应用元素的样式，比如鼠标悬停等。这时候我们就需要用到伪类了。以下是链接应用的伪类定义。
+爱恨原则”(LoVe/HAte),即四种伪类的首字母:LVHA
+a:link，定义正常链接的样式；
+a:visited，定义已访问过链接的样式；
+a:hover，定义鼠标悬浮在链接上时的样式；
+a:active，定义鼠标点击链接时的样式。
+
+
+a:link{
+color:#999999;
+}
+a:visited{
+color:#FFFF00;
+}
+a:hover{
+color:#006600;
+}
+/* IE不支持，用Firefox浏览可以看到效果 */
+input:focus{
+background:# E0F1F5;
+}
+7、通用选择器
+
+通用选择器用*来表示。例如：
+
+*{
+font-size: 12px;
+}
+表示所有的元素的字体大小都是12px；同时通用选择器还可以和后代选择器组合。
+
+8、群组选择器
+
+当几个元素样式属性一样时，可以共同调用一个声明，元素之间用逗号分隔。如：
+
+p, td, li {
+line-height:20px;
+color:#c00;
+}
+#main p, #sider span {
+color:#000;
+line-height:26px;
+}
+.#main p span {
+color:#f60;
+}
+.text1 h1,#sider h3,.art_title h2 {
+font-weight:100;
+}
+使用群组选择器，将会大大的简化CSS代码，将具有多个相同属性的元素，合并群组进行选择，定义同样的CSS属性，这大大的提高了编码效率，同时也减少了CSS文件的体积。
+
+9、相邻同胞选择器
+
+我们除了上面的子选择器与后代选择器，我们可能还希望找到兄弟两个当中的一个，如一个标题h1元素后面紧跟了两个段落p元素，我们想定位第一个段落p元素，对它应用样式。我们就可以使用相邻同胞选择器。
+相邻同胞选择器使用了加号（+）
+
+10、属性选择器
+
+您可以用判断html标签的某个属性是否存在的方法来定义css。
+
+属性选择器，是根据元素的属性来匹配的，其属性可以是标准属性也可以是自定义属性
+
+11、伪元素选择器
+
+所有伪元素选择器都必须放在出现该伪元素的选择器的最后面，也就是说伪元素选择器不能跟任何派生选择器。
+::before 伪元素
+::after 伪元素
+::selection 伪元素
+
+::after	p::after	在每个 <p> 元素之后插入内容。
+::before	p::before	在每个 <p> 元素之前插入内容。
+::first-letter	p::first-letter	选择每个 <p> 元素的首字母。
+::first-line	p::first-line	选择每个 <p> 元素的首行。
+::selection	p::selection	选择用户选择的元素部分。
+
+伪类和伪元素的区别
+css3规范中要求使用双冒号（::）表示伪元素，以此来区分伪类和伪元素，比如::before和::after等伪元素使用双冒号（::），:hover和:active伪类使用单冒号（:）
+
+伪元素/伪对象：不存在在DOM文档中，是虚拟的元素，是创建新元素。代表某个元素的子元素，这个子元素虽然在逻辑上存在，但却并不实际存在于文档树中。
+
+伪类：存在DOM文档中，逻辑上存在但在文档树中却无须标识的“幽灵”分类。
+
+其中伪类和伪元素的根本区别在于：它们是否创造了新的元素。
+
+伪类：用于向某些选择器添加特殊的效果
+伪元素：用于将特殊的效果添加到某些选择器
+其实根本意思就是就是对那些不能通过class、id等选择元素的补充
 ```
 
 ## 3、框架(Vue为主 重点)
