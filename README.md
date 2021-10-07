@@ -1140,6 +1140,7 @@ style-loader 创建style标签，将js中的样式资源插入进去，添加到
 css-loader 将css文件变成commonjs模块加载到js中，里面内容是样式字符串
 less-loader 将less文件转化为css文件
 sass-loader 将sass文件转化为css文件
+vue-loader 解析和转换 .vue 文件，提取出其中的逻辑代码 script、样式代码 style、以及 HTML 模版 template，再分别把它们交给对应的 Loader 去处理。
 html-loader 处理html文件中的img图片，负责引入img，从而能被url-loader进行处理。
 url-loader 下载url-loader file-loader   url-loader要依赖于file-loader，所以也要下载file-loader
 file-loader 分发文件到 output 目录并返回相对路径,打包其他资源主要是包括字体图标等，主要用file-loader来处理这些资源，原理一般都是直接拷贝到打包库里面，不进行任何转化处理
@@ -1203,6 +1204,122 @@ style-loader是把css样式通过添加style标签的形式引入到html中。
 同时使用clean-webpack-plugin来清除build文件夹，这样每次打包，里面都是最新的打包文件，把之前的删除掉了。
 通过cleanAfterEveryBuildPatterns来设置打包时清空的文件夹。
 cleanAfterEveryBuildPatterns:['build']
+
+```
+### 4.2 webpack相关的优化
+```
+1、通过exclude、include 缩小搜索范围
+module.exports = {
+    module:{
+        rules:[
+            {
+                test:/\.js$/,
+                loader:'babel-loader',
+                // 只在src文件夹中查找
+                include:[resolve('src')],
+                // 排除的路径
+                exclude:/node_modules/
+            }
+        ]
+    }
+}
+
+2、减少不必要的模块依赖
+module.noParse字段可用于配置不需要解析的模块。对于类似jquery和lodash这些大型的第三方库，本身就是兼容性非常好的，不需要在进行解析。可以忽略以提升构建速度。
+module.exports = {
+  // ...
+  module: {
+    noParse: /jquery|lodash/, // 正则表达式
+
+    // 或者使用 function
+    noParse(content) {
+      return /jquery|lodash/.test(content)
+    },
+  }
+}
+3、使用cache-loader进行缓存文件。
+对于一些比较消耗性能的模块，并且打包后文件内容没有改动可以使用cache-loader进行缓存。因为缓存是直接保存在硬盘,所以存取缓存都是要消耗一定的性能。小文件没必要缓存。下次就可以不使用loader而使用缓存。
+module.exports = {
+  module: {
+    rules: [
+      {
+        test: /\.js$/,
+        use: [
+          {
+            loader: 'cache-loader',
+            options: {
+              cacheDirectory: path.resolve('.cache') //还能进行配置
+            }
+          },
+          'babel-loader'
+        ],
+        include: path.resolve('src')
+      }
+    ]
+  }
+}
+4、开启多线程构建
+webpack是基于node.js运行的，而node.js是单线程的，所以webpack处理文件是一个个处理的，如果需要处理的文件一多的话，处理速度会很慢，因此在需要解析大量文件的项目中，可以通过开启多线程来处理文件，以加快构建速度。
+loader
+如thread-loader会开启一个线程池，线程池中包含适量的线程，利用多线程同时开启多个loader的处理
+// webpack.config.js 文件配置
+module.exports = {
+  mode: "development",
+  module: {
+    rules: [
+      {
+        test: /\.js$/,
+        use: [
+          "thread-loader",
+          "babel-loader"
+        ]
+      }
+    ]
+  }
+};
+
+plugin
+可以使用happypack是一个开启多线程解析和构建文件的plugin。
+var HappyPack = require('happypack')
+var happyThreadPool = HappyPack.ThreadPool({ size: os.cpus().length })
+module.exports = {
+  mode: "development",
+  plugins: [
+  new HappyPack({
+    id: 'js',
+    loaders: ['babel-loader'],
+    // 用于检索工作线程的预定义线程池
+    threadPool: happyThreadPool,
+    // 启用此选项可将状态消息从HappyPack记录到STDOUT
+    verbose: true
+  })
+]
+
+开发阶段的页面响应速度
+当webpack开启watch，当文件被修改后,webpack会自动构建输出新的打包文件，但是还需要刷新浏览器重载页面才能看到最新的内容，这样的会降低开发效率。webpack-dev-server正好适用于处理类似的问题。webpack-dev-server 的热更新和热替换功能能提高我们开发阶段的页面响应速度。
+1.热更新
+热更新可以理解为当文件有修改，页面会实时刷新。原理是,webpack-dev-server使用的是express框架作为文件资源的http服务器，通过websoket协议和浏览器端进行通讯。当文件修改的时候，http服务器会监听到文件变化，而触发webpakc编译文件，但是文件内容不会输出到output的目录，而是把编译的内容存放到内存中，然后浏览器就会实时更新内存中的内容，实现页面实时更新。
+2.热替换HMR（Hot Module Replacement）
+热更新是把整个页面刷新，而热替换是只刷新修改的那部分。css样式修改可以立马看到热替换效果，因为css只是样式。而如js这些逻辑性的代码，无法页面热替换，除了css文件都需要额外的手动处理才能热替换。
+
+// webpack.config.js
+const webpack = require('webpack')
+ 
+module.exports = {
+  // ...
+  devServer: {
+    // 开启 HMR 特性，如果资源不支持 HMR 会 fallback 到 live reloading
+    hot: true
+    // 只使用 HMR，不会 fallback 到 live reloading
+    // hotOnly: true
+  },
+  plugins: [
+    // ...
+    // HMR 特性所需要的插件
+    new webpack.HotModuleReplacementPlugin()
+  ]
+}
+
 
 ```
 ## 5、性能优化（重点）
