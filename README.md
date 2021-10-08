@@ -1135,6 +1135,33 @@ callbacks新增回调函数后又执行了timerFunc函数，pending用来标识�
 再回到我们开头说的setTimeout，可以看出来nextTick是对setTimeout进行了多种兼容性的处理，宽泛的也可以理解为将回调函数放入setTimeout中执行；不过nextTick优先放入微任务执行，而setTimeout是宏任务，因此nextTick一般情况下总是先于setTimeout执行，我们可以在浏览器中尝试一下：
 最后验证猜想，当前宏任务执行完成后，优先执行两个微任务，最后再执行宏任务。
 ```
+### keep-alive
+```
+
+```
+### 父子组件的执行顺序
+```
+加载渲染过程
+->父beforeCreate -> 父created -> 父beforeMount 
+->子beforeCreate -> 子created -> 子beforeMount -> 子mounted
+-> 父mounted
+
+子组件更新过程
+->父beforeUpdate
+-> 子beforeUpdate -> 子updated
+-> 父updated
+
+父组件更新过程
+父beforeUpdate -> 父updated
+
+销毁过程
+-> 父beforeDestroy
+-> 子beforeDestroy -> 子destroyed
+-> 父destroyed
+
+vue的生命周期
+
+```
 ### MVVM 
 #### 介绍一下MVVM，和MVC有什么区别
 ```
